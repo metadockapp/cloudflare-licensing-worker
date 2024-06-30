@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
-import { uuid } from 'uuidv4'
+import { v4 as uuid } from 'uuid'
 
 type Bindings = {
   licenses: KVNamespace,
@@ -50,10 +50,10 @@ app.get('/activate', zValidator('json', activateSchema), async (c) => {
   }
 
   // create a new activation token and activate it, then return them the token
-  const newActivationToken = uuid();
-  await c.env.tokens.put(newActivationToken, licenseKey);
-  await c.env.hardwareIds.put(newActivationToken, hardwareId);
-  await c.env.activations.put(licenseKey, newActivationToken);
+  const newActivationToken = uuid()
+  await c.env.tokens.put(newActivationToken, licenseKey)
+  await c.env.hardwareIds.put(newActivationToken, hardwareId)
+  await c.env.activations.put(licenseKey, newActivationToken)
 
   return c.json({
     token: newActivationToken,

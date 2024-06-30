@@ -5,10 +5,10 @@ compatibility_date = "2023-12-01"
 # MY_VAR = "my-variable"
 
 kv_namespaces = [
-    { binding = "licenses", id = "fec6be36ba5c41c5bca0fe682e5d59ba" },
-    { binding = "activations", id = "1169751c9cdb4cb5adca0562b49cf447" },
-    { binding = "hardwareIds", id = "3b1ec16c85b948639107465d4b90fdac" },
-    { binding = "tokens", id = "b4f66377d8854d0d9064e3b2bf0f0a27" }
+    { binding = "licenses", id = "" },
+    { binding = "activations", id = "" },
+    { binding = "hardwareIds", id = "" },
+    { binding = "tokens", id = "" }
 ]
 # [[kv_namespaces]]
 # binding = "MY_KV_NAMESPACE"

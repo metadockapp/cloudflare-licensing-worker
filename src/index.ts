@@ -29,17 +29,13 @@ app.get('/activate', zValidator('json', activateSchema), async (c) => {
   
   // license key does not exist
   if (!expiration) {
-    return c.json({
-      success: false
-    })
+    return c.text("", 402)
   }
 
   const expirationTimestamp = Number.parseInt(expiration)
   // license expired
   if (Date.now() > expirationTimestamp) {
-    return c.json({
-      success: false
-    })
+    return c.text("", 402)
   }
 
   // deactivate the existing activation token, so a license key can only be used once
@@ -72,16 +68,12 @@ app.get('/validate', zValidator('json', validateSchema), async (c) => {
   const activeHardwareId = await c.env.hardwareIds.get(token)
   const licenseKey = await c.env.tokens.get(token)
 
-  if (!licenseKey || activeHardwareId) {
-    return c.json({
-      success: false
-    })
+  if (!licenseKey || !activeHardwareId) {
+    return c.text("", 402)
   }
 
   if (activeHardwareId != hardwareId) {
-    return c.json({
-      success: false
-    })
+    return c.text("", 402)
   }
 
   let currentActivationToken = await c.env.activations.get(licenseKey)
@@ -90,9 +82,7 @@ app.get('/validate', zValidator('json', validateSchema), async (c) => {
     await c.env.tokens.delete(token)
     await c.env.hardwareIds.delete(token)
 
-    return c.json({
-      success: false
-    })
+    return c.text("", 402)
   }
 
 
@@ -100,23 +90,17 @@ app.get('/validate', zValidator('json', validateSchema), async (c) => {
 
   // license key does not exist
   if (!expiration) {
-    return c.json({
-      success: false
-    })
+    return c.text("", 402)
   }
 
   const expirationTimestamp = Number.parseInt(expiration)
 
   // license expired
   if (Date.now() > expirationTimestamp) {
-    return c.json({
-      success: false
-    })
+    return c.text("", 402)
   }
 
-  return c.json({
-    success: true
-  })
+  return c.text("")
 })
 
 export default app

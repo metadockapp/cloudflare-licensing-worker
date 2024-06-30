@@ -1,0 +1,26 @@
+name = "cloudflare-licensing-worker"
+compatibility_date = "2023-12-01"
+
+# [vars]
+# MY_VAR = "my-variable"
+
+kv_namespaces = [
+    { binding = "licenses", id = "fec6be36ba5c41c5bca0fe682e5d59ba" },
+    { binding = "activations", id = "1169751c9cdb4cb5adca0562b49cf447" },
+    { binding = "hardwareIds", id = "3b1ec16c85b948639107465d4b90fdac" }
+]
+# [[kv_namespaces]]
+# binding = "MY_KV_NAMESPACE"
+# id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# [[r2_buckets]]
+# binding = "MY_BUCKET"
+# bucket_name = "my-bucket"
+
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "my-database"
+# database_id = ""
+
+# [ai]
+# binding = "AI"

@@ -12,14 +12,12 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>()
 
-const schema = z.object({
+const activateSchema = z.object({
   licenseKey: z.string().uuid(),
   hardwareId: z.string().length(64)
 })
 
-
-
-app.get('/activate', zValidator('json', schema), async (c) => {
+app.get('/activate', zValidator('json', activateSchema), async (c) => {
   if (c.req.method.toLowerCase() != "post") {
     return c.text("", 403)
   }
@@ -59,6 +57,64 @@ app.get('/activate', zValidator('json', schema), async (c) => {
 
   return c.json({
     token: newActivationToken,
+    success: true
+  })
+})
+
+const validateSchema = z.object({
+  token: z.string().uuid(),
+  hardwareId: z.string().length(64)
+})
+
+app.get('/validate', zValidator('json', validateSchema), async (c) => {
+  const { token, hardwareId } = c.req.valid('json')
+
+  const activeHardwareId = await c.env.hardwareIds.get(token)
+  const licenseKey = await c.env.tokens.get(token)
+
+  if (!licenseKey || activeHardwareId) {
+    return c.json({
+      success: false
+    })
+  }
+
+  if (activeHardwareId != hardwareId) {
+    return c.json({
+      success: false
+    })
+  }
+
+  let currentActivationToken = await c.env.activations.get(licenseKey)
+
+  if (currentActivationToken != token) {
+    await c.env.tokens.delete(token)
+    await c.env.hardwareIds.delete(token)
+
+    return c.json({
+      success: false
+    })
+  }
+
+
+  let expiration = await c.env.licenses.get(licenseKey)
+
+  // license key does not exist
+  if (!expiration) {
+    return c.json({
+      success: false
+    })
+  }
+
+  const expirationTimestamp = Number.parseInt(expiration)
+
+  // license expired
+  if (Date.now() > expirationTimestamp) {
+    return c.json({
+      success: false
+    })
+  }
+
+  return c.json({
     success: true
   })
 })

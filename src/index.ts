@@ -1,106 +1,16 @@
-import { Hono } from 'hono'
+import {Context, Hono} from 'hono'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
-import { v4 as uuid } from 'uuid'
-
-type Bindings = {
-  licenses: KVNamespace,
-  activations: KVNamespace,
-  hardwareIds: KVNamespace,
-  tokens: KVNamespace
-}
+import ActivateSchema from './schema/activate'
+import ValidateSchema from './schema/validate'
+import Bindings from './includes/bindings'
+import Activate from './routes/activate'
+import Validate from './routes/validate'
+import Generate from './routes/generate'
 
 const app = new Hono<{ Bindings: Bindings }>()
 
-const activateSchema = z.object({
-  licenseKey: z.string().uuid(),
-  hardwareId: z.string().length(64)
-})
-
-app.get('/activate', zValidator('json', activateSchema), async (c) => {
-  if (c.req.method.toLowerCase() != "post") {
-    return c.text("", 403)
-  }
-
-  const data = c.req.valid('json')
-  const { hardwareId, licenseKey } = data
-  const expiration = await c.env.licenses.get(licenseKey)
-  const activationToken = await c.env.activations.get(licenseKey)
-  
-  // license key does not exist
-  if (!expiration) {
-    return c.text("", 402)
-  }
-
-  const expirationTimestamp = Number.parseInt(expiration)
-  // license expired
-  if (Date.now() > expirationTimestamp) {
-    return c.text("", 402)
-  }
-
-  // deactivate the existing activation token, so a license key can only be used once
-  if (activationToken != null) {
-    await c.env.hardwareIds.delete(activationToken)
-    await c.env.tokens.delete(activationToken)
-    await c.env.activations.delete(licenseKey)
-  }
-
-  // create a new activation token and activate it, then return them the token
-  const newActivationToken = uuid()
-  await c.env.tokens.put(newActivationToken, licenseKey)
-  await c.env.hardwareIds.put(newActivationToken, hardwareId)
-  await c.env.activations.put(licenseKey, newActivationToken)
-
-  return c.json({
-    token: newActivationToken,
-    success: true
-  })
-})
-
-const validateSchema = z.object({
-  token: z.string().uuid(),
-  hardwareId: z.string().length(64)
-})
-
-app.get('/validate', zValidator('json', validateSchema), async (c) => {
-  const { token, hardwareId } = c.req.valid('json')
-
-  const activeHardwareId = await c.env.hardwareIds.get(token)
-  const licenseKey = await c.env.tokens.get(token)
-
-  if (!licenseKey || !activeHardwareId) {
-    return c.text("", 402)
-  }
-
-  if (activeHardwareId != hardwareId) {
-    return c.text("", 402)
-  }
-
-  let currentActivationToken = await c.env.activations.get(licenseKey)
-
-  if (currentActivationToken != token) {
-    await c.env.tokens.delete(token)
-    await c.env.hardwareIds.delete(token)
-
-    return c.text("", 402)
-  }
-
-
-  let expiration = await c.env.licenses.get(licenseKey)
-
-  // license key does not exist
-  if (!expiration) {
-    return c.text("", 402)
-  }
-
-  const expirationTimestamp = Number.parseInt(expiration)
-
-  // license expired
-  if (Date.now() > expirationTimestamp) {
-    return c.text("", 402)
-  }
-
-  return c.text("")
-})
-
+app.post('/activate', zValidator('json', ActivateSchema), Activate)
+app.post('/validate', zValidator('json', ValidateSchema), Validate)
+app.post('/generate', Generate)
 export default app
